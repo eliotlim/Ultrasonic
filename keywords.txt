@@ -10,11 +10,14 @@
 #######################################
 
 Ultrasonic		KEYWORD1
+SRFRanger		KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 distanceRead	KEYWORD2
+distanceRange	KEYWORD2
+setAddress	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
