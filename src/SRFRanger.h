@@ -25,7 +25,8 @@ class SRFRanger {
     void distanceRange(uint8_t und);
     unsigned int distanceRead();
     void setAddress(byte newAddress);
-    byte getAddress() {return addr;}
+    byte getAddress() { return addr; }
+    void connect(byte address);
 
   private:
     byte addr;

@@ -68,7 +68,7 @@ unsigned int SRFRanger::distanceRead() {
   return (unsigned int) reading;
 }
 
-// Change the SRF Ranger I2C Address to a specified address
+// Set the currently connected SRF Ranger I2C Address to the specified address
 void SRFRanger::setAddress(byte newAddress) {
   Wire.beginTransmission(addr);
   Wire.write(byte(0x00));
@@ -91,6 +91,11 @@ void SRFRanger::setAddress(byte newAddress) {
   Wire.endTransmission();
 
   addr = normalizeAddress(newAddress);
+}
+
+// Change the connection of the SRFRanger object to the specified I2C Ranger
+void SRFRanger::connect(byte address) {
+  addr = normalizeAddress(address);
 }
 
 // Convert valid addresses for SRF10 devices into I2C (7-bit) addresses

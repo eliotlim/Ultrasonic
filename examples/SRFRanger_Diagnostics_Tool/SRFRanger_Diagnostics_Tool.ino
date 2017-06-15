@@ -36,8 +36,9 @@ SRFRanger ultrasoundSRF0(byte(0xE0));
 void printHelpMessage() {
   Serial.println("SRFRanger Diagnostics Tool");
   Serial.println("=== Available Commands ===");
-  Serial.println("getaddress - display 7-bit I2C address (decimal notation)");
-  Serial.println("setaddress - set I2C address - e.g. setaddress 112");
+  Serial.println("select     - select 8-bit I2C address - e.g. select 0xE2");
+  Serial.println("getaddress - display 8-bit I2C address (hexadecimal notation)");
+  Serial.println("setaddress - set 8-bit I2C address - e.g. setaddress 0xE0");
   Serial.println("range      - perform ultrasonic ranging");
   Serial.println("help       - display this message again");
 }
@@ -58,8 +59,9 @@ void loop() {
 
   // Prompt
   if (prompt) {
-    Serial.print("\nDevice: ");
-    Serial.print(ultrasoundSRF0.getAddress());
+    Serial.print("\nDevice: 0x");
+    // Convert 7-bit address to 8-bit datasheet address
+    Serial.print(ultrasoundSRF0.getAddress() * 2, HEX);
     Serial.print(" > ");
     prompt = false;
   }
@@ -68,37 +70,53 @@ void loop() {
   buf_len = 0;
   buf_len = Serial.readBytes(buffer, buf_size);
 
+  // Print the contents of the command buffer
+  if (buf_len) Serial.println(buffer);
   // Tokenize command / argument string
   char* command = strtok(buffer, " ");
   while (command != NULL) {
-    Serial.println(buffer);
 
     // Match the command string
-    if (strcmp(command, "getaddress") == 0) {
-      // Print the 7-bit I2C address of the connection (in decimal notation)
-      Serial.print("Address: ");
-      Serial.println(ultrasoundSRF0.getAddress());
+    if (strcmp(command, "select") == 0) {
+      // Select the 8-bit I2C address of the connection (in hexadecimal notation)
+      // DOES NOT change the I2C address of the attached sensors.
+      command = strtok(NULL, " ");
+      // Parse the I2C address as an unsigned long, followed by a byte cast
+      byte newAddress = (byte) strtoul(command, NULL, 16);
+      // I2C address bounds check (between 0xE0 and 0xFE, and EVEN)
+      if (newAddress && 0xE0 <= newAddress && newAddress <= 0xFE && newAddress % 2 == 0) {
+        Serial.print("New Address: 0x");
+        Serial.println(newAddress, HEX);
+        // Connect to new address
+        ultrasoundSRF0.connect(newAddress);
+      } else {
+        Serial.print("Invalid Address.");
+      }
+    } else if (strcmp(command, "getaddress") == 0) {
+      // Print the 8-bit I2C address of the connection (in hexadecimal notation)
+      Serial.print("Address: 0x");
+      Serial.println(ultrasoundSRF0.getAddress() * 2, HEX);
     } else if (strcmp(command, "setaddress") == 0) {
-      // Set the 7-bit I2C address of the connection (in decimal notation)
+      // Set the 8-bit I2C address of the connection (in hexadecimal notation)
       // Also changes the I2C address of the connected and attached sensor.
       command = strtok(NULL, " ");
-      // Parse the I2C address as an integer, followed by a byte cast
-      byte newAddress = (byte) atoi(command);
-      // I2C address bounds check
-      if (newAddress && 0x07 < newAddress && newAddress < 0xFF) {
-        Serial.print("New Address: ");
-        Serial.println(newAddress);
+      // Parse the I2C address as an unsigned long, followed by a byte cast
+      byte newAddress = (byte) strtoul(command, NULL, 16);
+      // I2C address bounds check (between 0xE0 and 0xFE, and EVEN)
+      if (newAddress && 0xE0 <= newAddress && newAddress <= 0xFE && newAddress % 2 == 0) {
+        Serial.print("New Address: 0x");
+        Serial.println(newAddress, HEX);
         // Set the address of the sensor
-        ultrasoundSRF0.setAddress(newAddress);
+        ultrasoundSRF0.connect(newAddress);
       } else {
-        Serial.println("Invalid Address String entered");
+        Serial.print("Invalid Address.");
       }
     } else if (strcmp(command, "range") == 0) {
-      // Perform ranging and display detected object range
-      ultrasoundSRF0.distanceRange();
+      // Perform ranging and display detected object range in CM
+      ultrasoundSRF0.distanceRange(CM);
       delay(70);
-      // Receive detected range in cm
-      float distance = ultrasoundSRF0.distanceRead(CM)/100.0f;
+      // Receive detected range
+      float distance = ultrasoundSRF0.distanceRead()/100.0f;
       Serial.print("range: ");
       Serial.print(distance);
       Serial.println("m");
